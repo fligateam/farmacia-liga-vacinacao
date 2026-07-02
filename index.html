@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Farmácia da Liga — Vacinação</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#2f6b4f">
+<link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+
+<div id="login-screen" class="login-screen">
+    <div class="login-card">
+        <h1>Farmácia da Liga</h1>
+        <p>Sistema de Agendamento de Vacinação</p>
+        <form id="login-form">
+            <div class="form-group">
+                <label class="form-label" for="login-email">Email</label>
+                <input type="email" id="login-email" class="form-input" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="login-password">Palavra-passe</label>
+                <input type="password" id="login-password" class="form-input" required autocomplete="current-password">
+            </div>
+            <div id="login-error" class="alert alert-danger hidden"></div>
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center; margin-top:0.5rem;">
+                <span id="login-btn-text">Entrar</span>
+            </button>
+        </form>
+    </div>
+</div>
+
+<div id="app-shell" class="app-shell hidden">
+    <button class="mobile-toggle" id="mobile-toggle" aria-label="Abrir menu">☰</button>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>Farmácia da Liga</h2>
+            <p id="user-info">—</p>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" data-page="agendamento"><span class="nav-icon">📅</span> Agendamento</li>
+            <li class="nav-item" data-page="validacao"><span class="nav-icon">✅</span> Validação</li>
+            <li class="nav-item" data-page="stock"><span class="nav-icon">📦</span> Stock</li>
+            <li class="nav-item" data-page="horarios" data-admin-only><span class="nav-icon">🗓️</span> Gestão de Horários</li>
+            <li class="nav-item" data-page="dashboard"><span class="nav-icon">📊</span> Dashboard</li>
+        </ul>
+        <div style="padding: 1rem;">
+            <button id="btn-logout" class="btn btn-ghost" style="width:100%; color:white; justify-content:center;">Sair</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+
+        <section id="page-agendamento" class="page">
+            <div class="page-header">
+                <h1>Agendamento</h1>
+                <button class="btn btn-primary" id="btn-novo-agendamento">+ Novo Agendamento</button>
+            </div>
+
+            <div class="filter-bar" id="filtro-vacinas">
+                <button class="chip active" data-vac="todos">Todos</button>
+                <button class="chip" data-vac="gripe">Gripe</button>
+                <button class="chip" data-vac="covid">COVID</button>
+                <button class="chip" data-vac="gripe_contingente">Gripe cont.</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title" id="calendario-titulo">Setembro 2026</span>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button class="btn btn-ghost" id="mes-anterior">◀</button>
+                        <button class="btn btn-ghost" id="mes-seguinte">▶</button>
+                    </div>
+                </div>
+                <div class="calendar-grid" id="calendario-agendamento"></div>
+            </div>
+
+            <div class="card" id="dia-selecionado-resumo" style="display:none;">
+                <div class="card-header">
+                    <span class="card-title" id="dia-resumo-titulo">Dia selecionado</span>
+                    <button class="btn btn-primary" id="btn-agendar-dia">Agendar</button>
+                </div>
+                <div id="dia-resumo-vagas"></div>
+            </div>
+        </section>
+
+        <section id="page-validacao" class="page hidden">
+            <div class="page-header">
+                <h1>Validação e Atendimento</h1>
+            </div>
+
+            <div class="filter-bar">
+                <input type="text" class="form-input" id="busca-validacao" placeholder="Pesquisar por NIF, nome ou data" style="max-width:300px;">
+                <select class="form-select" id="filtro-estado-validacao" style="max-width:180px;">
+                    <option value="">Estado: Todos</option>
+                    <option value="Agendado">Agendado</option>
+                    <option value="Administrado">Administrado</option>
+                    <option value="Cancelado">Cancelado</option>
+                    <option value="Não Compareceu">Não Compareceu</option>
+                </select>
+                <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; color:var(--cor-texto-muted);">
+                    <input type="checkbox" id="toggle-historico"> Histórico completo (inclui arquivo)
+                </label>
+                <button class="btn btn-secondary" id="btn-exportar-validacao">Exportar CSV</button>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 280px 1fr 320px; gap:1rem;" id="validacao-grid">
+                <div class="card">
+                    <h3 style="margin-bottom:0.75rem;">Fila de chegada</h3>
+                    <div class="queue-list" id="fila-chegada"></div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom:0.75rem;">Agendamentos do dia</h3>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead><tr><th>Hora</th><th>Utente</th><th>NIF</th><th>Vacinas</th><th>Estado</th></tr></thead>
+                            <tbody id="tabela-agendamentos-dia"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="card" id="painel-detalhe-utente">
+                    <h3 style="margin-bottom:0.75rem;">Detalhe do utente</h3>
+                    <div class="empty-state"><p>Seleciona um agendamento para ver o detalhe.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-stock" class="page hidden">
+            <div class="page-header">
+                <h1>Gestão de Stock</h1>
+                <button class="btn btn-secondary" id="btn-exportar-stock">Exportar CSV</button>
+            </div>
+
+            <div class="kpi-grid" id="stock-kpis"></div>
+
+            <div style="display:grid; grid-template-columns: 1fr 380px; gap:1rem;">
+                <div class="card">
+                    <h3 style="margin-bottom:0.75rem;">Lotes por vacina</h3>
+                    <div class="filter-bar">
+                        <button class="chip active" data-vac-stock="todos">Todos</button>
+                        <button class="chip" data-vac-stock="gripe">Gripe</button>
+                        <button class="chip" data-vac-stock="covid">COVID</button>
+                        <button class="chip" data-vac-stock="gripe_contingente">Gripe cont.</button>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead><tr><th>Vacina</th><th>Lote</th><th>Validade</th><th>Entradas</th><th>Retiradas</th><th>Adm.</th><th>Disponível</th></tr></thead>
+                            <tbody id="tabela-lotes"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="card">
+                        <h3 style="margin-bottom:0.75rem;">Novo movimento</h3>
+                        <form id="form-movimento-stock">
+                            <div class="form-group">
+                                <label class="form-label">Tipo de movimento</label>
+                                <select class="form-select" id="mov-tipo" required>
+                                    <option value="entrada">Entrada</option>
+                                    <option value="retirada">Retirada</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Vacina</label>
+                                <select class="form-select" id="mov-vacina" required>
+                                    <option value="gripe">Gripe</option>
+                                    <option value="covid">COVID</option>
+                                    <option value="gripe_contingente">Gripe contingente</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Número de lote</label>
+                                <input type="text" class="form-input" id="mov-lote" required>
+                            </div>
+                            <div class="form-group" id="mov-validade-group">
+                                <label class="form-label">Validade (obrigatória na entrada)</label>
+                                <input type="date" class="form-input" id="mov-validade">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Quantidade</label>
+                                <input type="number" class="form-input" id="mov-quantidade" min="1" required>
+                            </div>
+                            <div class="form-group hidden" id="mov-motivo-group">
+                                <label class="form-label">Motivo (obrigatório na retirada)</label>
+                                <select class="form-select" id="mov-motivo">
+                                    <option value="validade_expirada">Validade expirada</option>
+                                    <option value="quebra">Quebra</option>
+                                    <option value="perda">Perda</option>
+                                    <option value="transferencia">Transferência</option>
+                                    <option value="outro">Outro</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Notas (opcional)</label>
+                                <textarea class="form-textarea" id="mov-notas"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Guardar movimento</button>
+                        </form>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom:0.75rem;">Alertas</h3>
+                        <div id="alertas-stock"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-horarios" class="page hidden">
+            <div class="page-header"><h1>Gestão de Horários e Capacidade</h1></div>
+
+            <div style="display:grid; grid-template-columns: 1fr 380px; gap:1rem;">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title" id="horarios-mes-titulo">Setembro 2026</span>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button class="btn btn-ghost" id="horarios-mes-anterior">◀</button>
+                            <button class="btn btn-ghost" id="horarios-mes-seguinte">▶</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendario-horarios"></div>
+                </div>
+
+                <div>
+                    <div class="card" id="config-dia-card" style="display:none;">
+                        <h3 id="config-dia-titulo" style="margin-bottom:1rem;">Configurar dia</h3>
+                        <div class="form-group">
+                            <label style="display:flex; align-items:center; gap:0.5rem;">
+                                <input type="checkbox" id="dia-aberto" checked> Aberto para agendamentos
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Horário de atendimento</label>
+                            <div style="display:flex; gap:0.5rem;">
+                                <input type="time" class="form-input" id="dia-hora-inicio" value="09:00">
+                                <input type="time" class="form-input" id="dia-hora-fim" value="18:00">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Limite diário — Gripe</label>
+                            <input type="number" class="form-input" id="limite-gripe" min="0" value="14">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Limite diário — COVID</label>
+                            <input type="number" class="form-input" id="limite-covid" min="0" value="12">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Limite diário — Gripe contingente</label>
+                            <input type="number" class="form-input" id="limite-gripec" min="0" value="8">
+                        </div>
+                        <button class="btn btn-primary" id="btn-guardar-horario" style="width:100%; justify-content:center;">Guardar configuração</button>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="margin-bottom:1rem;">Exportações automáticas</h3>
+                        <button class="btn btn-secondary" id="btn-export-marcacoes" style="width:100%; justify-content:center; margin-bottom:0.5rem;">Exportar marcações (CSV)</button>
+                        <button class="btn btn-secondary" id="btn-export-presencas" style="width:100%; justify-content:center;">Exportar presenças (CSV)</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="page-dashboard" class="page hidden">
+            <div class="page-header">
+                <h1>Dashboard</h1>
+                <div style="display:flex; gap:0.75rem; align-items:center;">
+                    <span id="dashboard-periodo" style="font-size:0.85rem; color:var(--cor-texto-muted);">22 a 28 de setembro 2026</span>
+                    <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem;">
+                        <input type="checkbox" id="dashboard-toggle-arquivo"> Incluir histórico
+                    </label>
+                    <button class="btn btn-secondary" id="btn-export-dashboard">Exportar relatório</button>
+                </div>
+            </div>
+
+            <div class="kpi-grid" id="dashboard-kpis"></div>
+
+            <div style="display:grid; grid-template-columns: 1fr 320px; gap:1rem;">
+                <div class="card">
+                    <h3 style="margin-bottom:0.75rem;">Agendamentos por tipo de vacina</h3>
+                    <canvas id="grafico-tipo-vacina" height="220"></canvas>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom:0.75rem;">Taxa de comparência</h3>
+                    <canvas id="grafico-comparencia" height="220"></canvas>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 320px; gap:1rem; margin-top:1rem;">
+                <div class="card">
+                    <h3 style="margin-bottom:0.75rem;">Tendência semanal: administradas vs. agendadas</h3>
+                    <canvas id="grafico-tendencia" height="200"></canvas>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom:0.75rem;">Métricas operacionais</h3>
+                    <div id="metricas-operacionais"></div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<div class="modal-overlay" id="modal-agendamento">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Novo Agendamento</h2>
+            <span class="modal-close" data-close-modal="modal-agendamento">&times;</span>
+        </div>
+        <form id="form-agendamento">
+            <div class="form-group">
+                <label class="form-label">NIF</label>
+                <input type="text" class="form-input" id="ag-nif" required maxlength="9" pattern="[0-9]{9}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Nome</label>
+                <input type="text" class="form-input" id="ag-nome" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Telefone</label>
+                <input type="tel" class="form-input" id="ag-telefone">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Data do agendamento</label>
+                <input type="date" class="form-input" id="ag-data" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Vacinas a agendar</label>
+                <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+                    <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="gripe"> Gripe</label>
+                    <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="covid"> COVID</label>
+                    <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="gripe_contingente"> Gripe contingente</label>
+                </div>
+            </div>
+            <div id="ag-erro" class="alert alert-danger hidden"></div>
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Confirmar agendamento</button>
+        </form>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-detalhe">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Detalhe do agendamento</h2>
+            <span class="modal-close" data-close-modal="modal-detalhe">&times;</span>
+        </div>
+        <div id="modal-detalhe-conteudo"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modal-setup-admin">
+    <div class="modal">
+        <div class="modal-header"><h2>Configuração inicial</h2></div>
+        <p style="margin-bottom:1rem; color:var(--cor-texto-muted); font-size:0.9rem;">
+            Não existe nenhum administrador configurado. Cria a primeira conta de administrador para começar a usar a aplicação.
+        </p>
+        <form id="form-setup-admin">
+            <div class="form-group">
+                <label class="form-label">Nome</label>
+                <input type="text" class="form-input" id="setup-nome" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-input" id="setup-email" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Palavra-passe</label>
+                <input type="password" class="form-input" id="setup-password" required minlength="6">
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Criar administrador</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script type="module" src="./js/app.js"></script>
+</body>
+</html>

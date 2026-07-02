@@ -1,0 +1,73 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getPerfil() {
+      return get(/databases/$(database)/documents/utilizadores/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && getPerfil().papel == 'admin';
+    }
+
+    function isOperadorOuAdmin() {
+      return isSignedIn() && (getPerfil().papel == 'operador' || getPerfil().papel == 'admin');
+    }
+
+    match /utilizadores/{userId} {
+      allow read: if isSignedIn();
+      allow create: if !exists(/databases/$(database)/documents/utilizadores/$(userId));
+      allow update, delete: if isAdmin();
+    }
+
+    match /utentes/{docId} {
+      allow read, create, update: if isOperadorOuAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /agendamentos/{docId} {
+      allow read, create, update: if isOperadorOuAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /agendamentos_arquivo/{docId} {
+      allow read: if isOperadorOuAdmin();
+      allow write: if false; // apenas Cloud Functions (admin SDK) podem escrever
+    }
+
+    match /lotes/{docId} {
+      allow read, create, update: if isOperadorOuAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /movimentos_stock/{docId} {
+      allow read, create: if isOperadorOuAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /config_horarios/{docId} {
+      allow read: if isOperadorOuAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /config_vacinas/{docId} {
+      allow read: if isOperadorOuAdmin();
+      allow write: if isAdmin();
+    }
+
+    match /logs_auditoria/{docId} {
+      allow read: if isAdmin();
+      allow create: if isOperadorOuAdmin();
+      allow update, delete: if false;
+    }
+
+    match /backups_semanais/{docId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+  }
+}
