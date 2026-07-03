@@ -1,0 +1,10 @@
+node_modules/
+.env.local
+.env
+config/firebase.js
+.git/
+dist/
+build/
+.vscode/
+.idea/
+*.log
