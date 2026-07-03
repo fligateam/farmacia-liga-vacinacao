@@ -18,6 +18,7 @@
     --shadow-sm: 0 1px 3px rgba(30,50,35,0.08);
     --shadow-md: 0 4px 14px rgba(30,50,35,0.10);
     --sidebar-width: 240px;
+    
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -163,4 +164,18 @@ body {
     .mobile-toggle { display: block; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
     .calendar-day { min-height: 56px; }
+}
+
+.calendar-day.blocked-red {
+  background: #f8d7da;
+  border-color: #dc3545;
+}
+
+.calendar-day.no-slots-light-red {
+  background: #fbe9eb;
+  border-color: #efb7bd;
+}
+
+.calendar-day.selected {
+  outline: 2px solid #0d6efd;
 }
