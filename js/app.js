@@ -196,24 +196,24 @@ async function renderizarCalendarioAgendamento() {
     titulo.textContent = mesAtual.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
 
     const weekdays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-    let html = weekdays.map(d => `<div class="calendar-header">${d}</div>`).join("");
+     html = weekdays.map(d => `<div class="calendar-header">${d}</div>`).join("");
 
     const primeiroDia = new Date(ano, mes, 1);
     const ultimoDia = new Date(ano, mes + 1, 0);
-    let diaSemanaInicio = (primeiroDia.getDay() + 6) % 7;
+     diaSemanaInicio = (primeiroDia.getDay() + 6) % 7;
 
     const configMes = await Horarios.obterConfigMes(ano, mes);
     const configPorDia = {};
     configMes.forEach(c => { const d = c.dia?.toDate ? c.dia.toDate() : new Date(c.dia); configPorDia[d.toDateString()] = c; });
 
-    for (let i = 0; i < diaSemanaInicio; i++) html += `<div class="calendar-day empty"></div>`;
+    for ( i = 0; i < diaSemanaInicio; i++) html += `<div class="calendar-day empty"></div>`;
 
-    for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
+    for ( dia = 1; dia <= ultimoDia.getDate(); dia++) {
         const dataAtual = new Date(ano, mes, dia);
         const config = configPorDia[dataAtual.toDateString()];
         const bloqueado = config && config.aberto === false;
 
-        let badgesHtml = "";
+         badgesHtml = "";
         if (bloqueado) {
             badgesHtml = `<span class="vac-badge vac-badge-zero">Fechado</span>`;
         } else if (config) {
@@ -291,7 +291,7 @@ async function obterAgendamentosFiltrados() {
         else filtros.nome = termo;
     }
 
-    return incluirHistorico ? await Agendamento.buscarHistoricoCompleto({ ...filtros, incluirArquivo: true }) : await Agendamento.buscarAgendamentos(filtros);
+    return incluirHistorico ? await Agendamento.buscarHistoricoCompo({ ...filtros, incluirArquivo: true }) : await Agendamento.buscarAgendamentos(filtros);
 }
 
 async function renderizarValidacao() {
@@ -346,7 +346,7 @@ function mostrarDetalheUtente(agendamento) {
     const container = document.getElementById("modal-detalhe-conteudo");
     const vacinasHtml = (agendamento.vacinasAgendadas || []).map((v, idx) => {
         const config = VACINAS.find(vc => vc.id === v.tipoVacina);
-        let acoes = "";
+         acoes = "";
         if (v.estadoDose === "agendada") {
             acoes = `
                 <button class="btn btn-primary" data-adm="${idx}">Administrar</button>
@@ -410,7 +410,7 @@ function mostrarDetalheUtente(agendamento) {
 
 /* ===================== STOCK ===================== */
 
-let filtroVacinaStock = "todos";
+ filtroVacinaStock = "todos";
 
 function configurarEventosStock() {
     document.querySelectorAll("#page-stock .chip[data-vac-stock]").forEach(chip => {
@@ -508,8 +508,6 @@ async function renderizarStock() {
 
 /* ===================== HORÁRIOS ===================== */
 
-let mesHorarios = new Date();
-let diaHorariosSelecionado = null;
 
 function configurarEventosHorarios() {
     document.getElementById("horarios-mes-anterior").addEventListener("click", () => { mesHorarios.setMonth(mesHorarios.getMonth() - 1); renderizarCalendarioHorarios(); });
