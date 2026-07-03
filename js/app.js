@@ -1,4 +1,4 @@
-app_js = r'''/**
+
  * js/app.js
  * Orquestrador principal — liga a interface (index.html) aos módulos.
  */
