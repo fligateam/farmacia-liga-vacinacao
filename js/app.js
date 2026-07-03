@@ -280,7 +280,8 @@ async function mostrarResumoDia(dia) {
     const d = String(dia.getDate()).padStart(2, "0");
     const dataISO = `${y}-${m}-${d}`;
 
-    const agendamentosDoDia = await Agendamento.buscarAgendamentos({ dataInicio: dataISO, dataFim: dataISO });
+    // FIX: Filtrar apenas agendamentos com estado "Agendado"
+    const agendamentosDoDia = await Agendamento.buscarAgendamentos({ dataInicio: dataISO, dataFim: dataISO, estado: "Agendado" });
 
     if (agendamentosDoDia.length === 0) {
         listaEl.innerHTML = `<div class="empty-state"><p>Sem agendamentos neste dia.</p></div>`;
@@ -654,7 +655,7 @@ async function renderizarCalendarioHorarios() {
         const selected = diasHorariosSelecionados.includes(iso);
         html += `<div class="calendar-day ${bloqueado ? "blocked blocked-red" : ""} ${semVagas ? "no-slots-light-red" : ""} ${selected ? "selected" : ""}" data-dia="${iso}">
             <span class="calendar-day-num">${dia}</span>
-            ${config ? `<span class="vac-badge ${bloqueado ? "vac-badge-zero" : semVagas ? "vac-badge-zero" : "vac-badge-gripe"}">${bloqueado ? "Fechado" : semVagas ? "Sem vagas" : "Configurado"}</span>` : ""}
+            ${config ? `<span class="vac-badge ${bloqueado ? "vac-badge-zero" : semVagas ? "vac-badge-zero" : "vac-badge-gripe"}">${bloqueado ? "Fechado" : semVagas ? "Sem vagas" : "Configurado"}[...]
         </div>`;
     }
     container.innerHTML = html;
@@ -788,7 +789,7 @@ function obterSemanaAtual() {
 
 async function renderizarDashboard() {
     const { inicio, fim } = obterSemanaAtual();
-    document.getElementById("dashboard-periodo").textContent = `${inicio.toLocaleDateString("pt-PT", { day: "2-digit", month: "long" })} a ${fim.toLocaleDateString("pt-PT", { day: "2-digit", month: "long", year: "numeric" })}`;
+    document.getElementById("dashboard-periodo").textContent = `${inicio.toLocaleDateString("pt-PT", { day: "2-digit", month: "long" })} a ${fim.toLocaleDateString("pt-PT", { day: "2-digit", month: "long" })}`;
 
     const incluirArquivo = document.getElementById("dashboard-toggle-arquivo").checked;
     const metricas = await DashboardMod.obterMetricas(inicio.toISOString(), fim.toISOString(), incluirArquivo);
@@ -826,7 +827,7 @@ async function renderizarDashboard() {
     if (chartComparencia) chartComparencia.destroy();
     chartComparencia = new Chart(ctxComp, {
         type: "doughnut",
-        data: { labels: ["Administrado", "Não Compareceu", "Cancelado"], datasets: [{ data: [metricas.compareceu, metricas.naoCompareceu, metricas.cancelado], backgroundColor: ["#2f6b4f", "#c9a15a", "#b5563f"] }] },
+        data: { labels: ["Administrado", "Não Compareceu", "Cancelado"], datasets: [{ data: [metricas.compareceu, metricas.naoCompareceu, metricas.cancelado], backgroundColor: ["#2f6b4f", "#c9a152", "#e74c3c"] }]},
         options: { responsive: true, plugins: { legend: { position: "bottom" } } },
     });
 
