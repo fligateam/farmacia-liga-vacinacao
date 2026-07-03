@@ -238,22 +238,37 @@ export async function naoAdministrarVacina(agendamentoId, indiceVacina, observac
 
     await atualizarDocumento(COLS.AGENDAMENTOS, agendamentoId, { vacinasAgendadas: vacinas });
     await registrarLog(operadorId, "nao_administrar", COLS.AGENDAMENTOS, agendamentoId, { indiceVacina, observacoes });
-    }
+}
 
-    export async function confirmarPresenca(agendamentoId, uid) {
-    const ref = doc(db, COLS.AGENDAMENTOS, agendamentoId);
-    await updateDoc(ref, {
-        estado: "Presente",
+export async function confirmarPresenca(agendamentoId, uid) {
+    await atualizarDocumento(COLS.AGENDAMENTOS, agendamentoId, {
+        presente: true,
         confirmadoPor: uid,
-        confirmadoEm: new Date().toISOString()
+        confirmadoEm: new Date()
     });
+    await registrarLog(uid, "confirmar_presenca", COLS.AGENDAMENTOS, agendamentoId, {});
 }
 
 export async function anularAgendamento(agendamentoId, uid) {
-    const ref = doc(db, COLS.AGENDAMENTOS, agendamentoId);
-    await updateDoc(ref, {
-        estado: "Anulado",
+    await atualizarDocumento(COLS.AGENDAMENTOS, agendamentoId, {
+        estado: ESTADOS.CANCELADO,
         anuladoPor: uid,
-        anuladoEm: new Date().toISOString()
+        anuladoEm: new Date()
     });
+    await registrarLog(uid, "anular_agendamento", COLS.AGENDAMENTOS, agendamentoId, {});
+}
+
+export async function recuperarDoseCovid(agendamentoId, indiceVacina, nifDestino, nomeDestino, operadorId) {
+    const ag = await obterDocumento(COLS.AGENDAMENTOS, agendamentoId);
+    if (!ag) throw new Error("Agendamento não encontrado");
+
+    const vacinas = [...ag.vacinasAgendadas];
+    vacinas[indiceVacina] = {
+        ...vacinas[indiceVacina],
+        estadoDose: ESTADOS_DOSE.REDIRECIONADA,
+        destinoDose: { nif: nifDestino, nome: nomeDestino }
+    };
+
+    await atualizarDocumento(COLS.AGENDAMENTOS, agendamentoId, { vacinasAgendadas: vacinas });
+    await registrarLog(operadorId, "recuperar_dose", COLS.AGENDAMENTOS, agendamentoId, { nifDestino, nomeDestino });
 }
