@@ -53,37 +53,6 @@
 
     <main class="main-content">
 
-        <section id="admin-users" class="page-section hidden" data-admin-only>
-  <div class="section-head">
-    <div>
-      <h2>Gestão de colaboradores</h2>
-      <p>Cria utilizadores com perfil de administrador ou operador.</p>
-    </div>
-  </div>
-  <div class="grid-2">
-    <form id="form-criar-colaborador" class="card form-card">
-      <label>Nome
-        <input id="cc-nome" type="text" required>
-      </label>
-      <label>Email
-        <input id="cc-email" type="email" required>
-      </label>
-      <label>Palavra-passe inicial
-        <input id="cc-password" type="password" minlength="6" required>
-      </label>
-      <label>Papel
-        <select id="cc-papel" required>
-          <option value="operador">Operador</option>
-          <option value="admin">Administrador</option>
-        </select>
-      </label>
-      <button class="btn btn-primary" type="submit">Criar colaborador</button>
-      <p id="cc-feedback" class="form-feedback"></p>
-    </form>
-  </div>
-</section>
-        
-
         <section id="page-agendamento" class="page">
             <div class="page-header">
                 <h1>Agendamento</h1>
@@ -333,7 +302,38 @@
             </div>
         </section>
 
-    </main>
+    
+<section id="admin-users" class="page-section hidden" data-admin-only>
+  <div class="section-head">
+    <div>
+      <h2>Gestão de colaboradores</h2>
+      <p>Guarda o perfil depois de criares o utilizador no Authentication.</p>
+    </div>
+  </div>
+  <div class="grid-2">
+    <form id="form-criar-colaborador" class="card form-card">
+      <label>UID do utilizador
+        <input id="cc-uid" type="text" required>
+      </label>
+      <label>Nome
+        <input id="cc-nome" type="text" required>
+      </label>
+      <label>Email
+        <input id="cc-email" type="email" required>
+      </label>
+      <label>Papel
+        <select id="cc-papel" required>
+          <option value="operador">Operador</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </label>
+      <button class="btn btn-primary" type="submit">Guardar perfil</button>
+      <p id="cc-feedback" class="form-feedback"></p>
+    </form>
+  </div>
+</section>
+
+</main>
 </div>
 
 <div class="modal-overlay" id="modal-agendamento">
