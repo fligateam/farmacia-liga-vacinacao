@@ -1,5 +1,4 @@
-/**
- * js/app.js
+* js/app.js
  * Orquestrador principal — liga a interface (index.html) aos módulos.
  */
 import { COLS, listarColecao } from "./modules/db.js";
@@ -22,6 +21,8 @@ let agendamentosDia = [];
 let mesHorarios = new Date();
 let diaHorariosSelecionado = null;
 let diasHorariosSelecionados = [];
+let filtroVacinaStock = "todos";
+let chartTipoVacina = null, chartComparencia = null, chartTendencia = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
     await verificarPrimeiroAcesso();
@@ -196,24 +197,24 @@ async function renderizarCalendarioAgendamento() {
     titulo.textContent = mesAtual.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
 
     const weekdays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
-     html = weekdays.map(d => `<div class="calendar-header">${d}</div>`).join("");
+    let html = weekdays.map(d => `<div class="calendar-header">${d}</div>`).join("");
 
     const primeiroDia = new Date(ano, mes, 1);
     const ultimoDia = new Date(ano, mes + 1, 0);
-     diaSemanaInicio = (primeiroDia.getDay() + 6) % 7;
+    const diaSemanaInicio = (primeiroDia.getDay() + 6) % 7;
 
     const configMes = await Horarios.obterConfigMes(ano, mes);
     const configPorDia = {};
     configMes.forEach(c => { const d = c.dia?.toDate ? c.dia.toDate() : new Date(c.dia); configPorDia[d.toDateString()] = c; });
 
-    for ( i = 0; i < diaSemanaInicio; i++) html += `<div class="calendar-day empty"></div>`;
+    for (let i = 0; i < diaSemanaInicio; i++) html += `<div class="calendar-day empty"></div>`;
 
-    for ( dia = 1; dia <= ultimoDia.getDate(); dia++) {
+    for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
         const dataAtual = new Date(ano, mes, dia);
         const config = configPorDia[dataAtual.toDateString()];
         const bloqueado = config && config.aberto === false;
 
-         badgesHtml = "";
+        let badgesHtml = "";
         if (bloqueado) {
             badgesHtml = `<span class="vac-badge vac-badge-zero">Fechado</span>`;
         } else if (config) {
@@ -291,7 +292,7 @@ async function obterAgendamentosFiltrados() {
         else filtros.nome = termo;
     }
 
-    return incluirHistorico ? await Agendamento.buscarHistoricoCompo({ ...filtros, incluirArquivo: true }) : await Agendamento.buscarAgendamentos(filtros);
+    return incluirHistorico ? await Agendamento.buscarHistoricoCompleto({ ...filtros, incluirArquivo: true }) : await Agendamento.buscarAgendamentos(filtros);
 }
 
 async function renderizarValidacao() {
@@ -346,7 +347,7 @@ function mostrarDetalheUtente(agendamento) {
     const container = document.getElementById("modal-detalhe-conteudo");
     const vacinasHtml = (agendamento.vacinasAgendadas || []).map((v, idx) => {
         const config = VACINAS.find(vc => vc.id === v.tipoVacina);
-         acoes = "";
+        let acoes = "";
         if (v.estadoDose === "agendada") {
             acoes = `
                 <button class="btn btn-primary" data-adm="${idx}">Administrar</button>
@@ -409,8 +410,6 @@ function mostrarDetalheUtente(agendamento) {
 }
 
 /* ===================== STOCK ===================== */
-
- filtroVacinaStock = "todos";
 
 function configurarEventosStock() {
     document.querySelectorAll("#page-stock .chip[data-vac-stock]").forEach(chip => {
@@ -508,7 +507,6 @@ async function renderizarStock() {
 
 /* ===================== HORÁRIOS ===================== */
 
-
 function configurarEventosHorarios() {
     document.getElementById("horarios-mes-anterior").addEventListener("click", () => { mesHorarios.setMonth(mesHorarios.getMonth() - 1); renderizarCalendarioHorarios(); });
     document.getElementById("horarios-mes-seguinte").addEventListener("click", () => { mesHorarios.setMonth(mesHorarios.getMonth() + 1); renderizarCalendarioHorarios(); });
@@ -526,7 +524,7 @@ function configurarEventosHorarios() {
                 gripe_contingente: parseInt(document.getElementById("limite-gripec").value) || 0,
             },
         };
-        await Horarios.guardarConfigDia(diaHorariosSelecionado.toISOString(), dados, user.uid);
+        await Horarios.guardarConfigDia(diaHorariosSelecionado, dados, user.uid);
         mostrarToast("Configuração guardada.", "success");
         renderizarCalendarioHorarios();
     });
@@ -614,7 +612,6 @@ async function renderizarCalendarioHorarios() {
     });
 }
 
-
 async function renderizarFormHorariosSelecionados() {
     const card = document.getElementById("config-dia-card");
     const titulo = document.getElementById("config-dia-titulo");
@@ -641,8 +638,6 @@ async function renderizarFormHorariosSelecionados() {
 }
 
 /* ===================== DASHBOARD ===================== */
-
-let chartTipoVacina = null, chartComparencia = null, chartTendencia = null;
 
 function configurarEventosDashboard() {
     const btnAplicar = document.getElementById("btn-aplicar-horarios-selecionados");
@@ -749,3 +744,9 @@ async function renderizarDashboard() {
         options: { responsive: true, plugins: { legend: { position: "bottom" } } },
     });
 }
+'''
+
+Path('output/js/app.js').write_text(app_js)
+print("bytes:", len(app_js))
+print("mesHorarios count:", app_js.count("let mesHorarios"))
+print("diaHorariosSelecionado count:", app_js.count("let diaHorariosSelecionado"))
