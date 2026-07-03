@@ -745,5 +745,5 @@ async function renderizarDashboard() {
         options: { responsive: true, plugins: { legend: { position: "bottom" } } },
     });
 }
-'''
+
 
