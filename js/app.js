@@ -1,4 +1,3 @@
-
  * js/app.js
  * Orquestrador principal — liga a interface (index.html) aos módulos.
  */
@@ -746,3 +745,4 @@ async function renderizarDashboard() {
     });
 }
 '''
+
