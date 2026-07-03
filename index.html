@@ -83,6 +83,7 @@
                     <button class="btn btn-primary" id="btn-agendar-dia">Agendar</button>
                 </div>
                 <div id="dia-resumo-vagas"></div>
+                <div id="dia-resumo-agendamentos" style="margin-top:1rem;"></div>
             </div>
         </section>
 
@@ -100,6 +101,7 @@
                     <option value="Cancelado">Cancelado</option>
                     <option value="Não Compareceu">Não Compareceu</option>
                 </select>
+                    <input type="date" class="form-input" id="filtro-data-validacao" style="max-width:180px;">
                 <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem; color:var(--cor-texto-muted);">
                     <input type="checkbox" id="toggle-historico"> Histórico completo (inclui arquivo)
                 </label>
@@ -277,17 +279,20 @@
             </div>
         </section>
 
-        <section id="page-dashboard" class="page hidden">
-            <div class="page-header">
-                <h1>Dashboard</h1>
-                <div style="display:flex; gap:0.75rem; align-items:center;">
-                    <span id="dashboard-periodo" style="font-size:0.85rem; color:var(--cor-texto-muted);">22 a 28 de setembro 2026</span>
-                    <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem;">
-                        <input type="checkbox" id="dashboard-toggle-arquivo"> Incluir histórico
-                    </label>
-                    <button class="btn btn-secondary" id="btn-export-dashboard">Exportar relatório</button>
-                </div>
-            </div>
+<section id="page-dashboard" class="page hidden">
+    <div class="page-header">
+        <h1>Dashboard</h1>
+        <div style="display:flex; gap:0.75rem; align-items:center;">
+            <button class="btn btn-ghost" id="dashboard-semana-anterior">◀</button>
+            <span id="dashboard-periodo" style="font-size:0.85rem; color:var(--cor-texto-muted);">22 a 28 de setembro 2026</span>
+            <button class="btn btn-ghost" id="dashboard-semana-seguinte">▶</button>
+            <input type="date" class="form-input" id="dashboard-data-referencia" style="max-width:160px;">
+            <label style="display:flex; align-items:center; gap:0.4rem; font-size:0.85rem;">
+                <input type="checkbox" id="dashboard-toggle-arquivo"> Incluir histórico
+            </label>
+            <button class="btn btn-secondary" id="btn-export-dashboard">Exportar relatório</button>
+        </div>
+    </div>
 
             <div class="kpi-grid" id="dashboard-kpis"></div>
 
