@@ -1,4 +1,5 @@
-* js/app.js
+app_js = r'''/**
+ * js/app.js
  * Orquestrador principal — liga a interface (index.html) aos módulos.
  */
 import { COLS, listarColecao } from "./modules/db.js";
@@ -745,8 +746,3 @@ async function renderizarDashboard() {
     });
 }
 '''
-
-Path('output/js/app.js').write_text(app_js)
-print("bytes:", len(app_js))
-print("mesHorarios count:", app_js.count("let mesHorarios"))
-print("diaHorariosSelecionado count:", app_js.count("let diaHorariosSelecionado"))
