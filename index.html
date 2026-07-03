@@ -228,33 +228,45 @@
 
                 <div>
                     <div class="card" id="config-dia-card" style="display:none;">
-                        <h3 id="config-dia-titulo" style="margin-bottom:1rem;">Configurar dia</h3>
-                        <div class="form-group">
-                            <label style="display:flex; align-items:center; gap:0.5rem;">
-                                <input type="checkbox" id="dia-aberto" checked> Aberto para agendamentos
-                            </label>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Horário de atendimento</label>
-                            <div style="display:flex; gap:0.5rem;">
-                                <input type="time" class="form-input" id="dia-hora-inicio" value="09:00">
-                                <input type="time" class="form-input" id="dia-hora-fim" value="18:00">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Limite diário — Gripe</label>
-                            <input type="number" class="form-input" id="limite-gripe" min="0" value="14">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Limite diário — COVID</label>
-                            <input type="number" class="form-input" id="limite-covid" min="0" value="12">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Limite diário — Gripe contingente</label>
-                            <input type="number" class="form-input" id="limite-gripec" min="0" value="8">
-                        </div>
-                        <button class="btn btn-primary" id="btn-guardar-horario" style="width:100%; justify-content:center;">Guardar configuração</button>
-                    </div>
+    <h3 id="config-dia-titulo" style="margin-bottom:1rem;">Configurar dia</h3>
+
+    <div class="form-group">
+        <label style="display:flex; align-items:center; gap:0.5rem;">
+            <input type="checkbox" id="dia-aberto" checked> Aberto para agendamentos
+        </label>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Horário de atendimento</label>
+        <div style="display:flex; gap:0.5rem;">
+            <input type="time" class="form-input" id="dia-hora-inicio" value="09:00">
+            <input type="time" class="form-input" id="dia-hora-fim" value="18:00">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Limite diário — Gripe</label>
+        <input type="number" class="form-input" id="limite-gripe" min="0" value="14">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Limite diário — COVID</label>
+        <input type="number" class="form-input" id="limite-covid" min="0" value="12">
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Limite diário — Gripe contingente</label>
+        <input type="number" class="form-input" id="limite-gripec" min="0" value="8">
+    </div>
+
+    <button class="btn btn-primary" id="btn-guardar-horario" style="width:100%; justify-content:center; margin-bottom:0.5rem;">
+        Guardar configuração
+    </button>
+
+    <button class="btn btn-secondary" id="btn-aplicar-horarios-selecionados" style="width:100%; justify-content:center;">
+        Aplicar a selecionados
+    </button>
+</div>
 
                     <div class="card">
                         <h3 style="margin-bottom:1rem;">Exportações automáticas</h3>
@@ -342,36 +354,42 @@
             <h2>Novo Agendamento</h2>
             <span class="modal-close" data-close-modal="modal-agendamento">&times;</span>
         </div>
-        <form id="form-agendamento">
-            <div class="form-group">
-                <label class="form-label">NIF</label>
-                <input type="text" class="form-input" id="ag-nif" required maxlength="9" pattern="[0-9]{9}">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Nome</label>
-                <input type="text" class="form-input" id="ag-nome" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Telefone</label>
-                <input type="tel" class="form-input" id="ag-telefone">
-            </div>
-            <div class="form-group">
-                <label class="form-label">Data do agendamento</label>
-                <input type="date" class="form-input" id="ag-data" required>
-            </div>
-            <div class="form-group">
-                <label class="form-label">Vacinas a agendar</label>
-                <div style="display:flex; gap:1rem; flex-wrap:wrap;">
-                    <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="gripe"> Gripe</label>
-                    <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="covid"> COVID</label>
-                    <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="gripe_contingente"> Gripe contingente</label>
-                </div>
-            </div>
-            <div id="ag-erro" class="alert alert-danger hidden"></div>
-            <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Confirmar agendamento</button>
-        </form>
+      <form id="form-agendamento">
+    <div class="form-group">
+        <label class="form-label">NIF</label>
+        <input type="text" class="form-input" id="ag-nif" required maxlength="9" pattern="[0-9]{9}">
     </div>
-</div>
+    <div class="form-group">
+        <label class="form-label">Nome</label>
+        <input type="text" class="form-input" id="ag-nome" required>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Telefone</label>
+        <input type="tel" class="form-input" id="ag-telefone">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Idade</label>
+        <input type="number" class="form-input" id="ag-idade" min="0">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Observações</label>
+        <textarea class="form-input" id="ag-obs" rows="3"></textarea>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Data do agendamento</label>
+        <input type="date" class="form-input" id="ag-data" required>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Vacinas a agendar</label>
+        <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+            <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="gripe"> Gripe</label>
+            <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="covid"> COVID</label>
+            <label style="display:flex; align-items:center; gap:0.4rem;"><input type="checkbox" name="ag-vacina" value="gripe_contingente"> Gripe contingente</label>
+        </div>
+    </div>
+    <div id="ag-erro" class="alert alert-danger hidden"></div>
+    <button type="submit" class="btn btn-primary" style="width:100%; justify-content:center;">Confirmar agendamento</button>
+</form>
 
 <div class="modal-overlay" id="modal-detalhe">
     <div class="modal">
