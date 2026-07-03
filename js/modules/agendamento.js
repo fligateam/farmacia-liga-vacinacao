@@ -238,4 +238,22 @@ export async function naoAdministrarVacina(agendamentoId, indiceVacina, observac
 
     await atualizarDocumento(COLS.AGENDAMENTOS, agendamentoId, { vacinasAgendadas: vacinas });
     await registrarLog(operadorId, "nao_administrar", COLS.AGENDAMENTOS, agendamentoId, { indiceVacina, observacoes });
+
+    export async function confirmarPresenca(agendamentoId, uid) {
+    const ref = doc(db, COLS.AGENDAMENTOS, agendamentoId);
+    await updateDoc(ref, {
+        estado: "Presente",
+        confirmadoPor: uid,
+        confirmadoEm: new Date().toISOString()
+    });
+}
+
+export async function anularAgendamento(agendamentoId, uid) {
+    const ref = doc(db, COLS.AGENDAMENTOS, agendamentoId);
+    await updateDoc(ref, {
+        estado: "Anulado",
+        anuladoPor: uid,
+        anuladoEm: new Date().toISOString()
+    });
+}
 }
