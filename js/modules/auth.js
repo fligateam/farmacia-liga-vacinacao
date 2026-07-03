@@ -3,8 +3,8 @@
  * Gestão de autenticação e permissões.
  */
 import { auth, db, COLS, registrarLog } from "./db.js";
-import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const PAPEIS = { ADMIN: "admin", OPERADOR: "operador" };
 let utilizadorAtual = null;
@@ -50,7 +50,22 @@ export function isAdmin() { return !!utilizadorAtual && utilizadorAtual.papel ==
 export function isOperador() { return !!utilizadorAtual && (utilizadorAtual.papel === PAPEIS.OPERADOR || utilizadorAtual.papel === PAPEIS.ADMIN); }
 
 export async function criarUtilizadorAdmin(uid, nome, email) {
-    await setDoc(doc(db, COLS.UTILIZADORES, uid), { uid, nome, email, papel: PAPEIS.ADMIN, ativo: true, criadoEm: new Date() });
+    await setDoc(doc(db, COLS.UTILIZADORES, uid), { uid, nome, email, papel: PAPEIS.ADMIN, ativo: true, criadoEm: serverTimestamp() });
+}
+
+export async function criarColaborador({ nome, email, password, papel }) {
+    if (!isAdmin()) throw new Error("Apenas administradores podem criar colaboradores.");
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    await setDoc(doc(db, COLS.UTILIZADORES, cred.user.uid), {
+        uid: cred.user.uid,
+        nome,
+        email,
+        papel,
+        ativo: true,
+        criadoEm: serverTimestamp()
+    });
+    await registrarLog(utilizadorAtual.uid, "criar_colaborador", COLS.UTILIZADORES, cred.user.uid);
+    return cred.user.uid;
 }
 
 export { PAPEIS };
