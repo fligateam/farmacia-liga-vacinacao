@@ -23,6 +23,7 @@ let mesHorarios = new Date();
 let diaHorariosSelecionado = null;
 let diasHorariosSelecionados = [];
 let filtroVacinaStock = "todos";
+let semanaReferenciaDashboard = new Date();
 let chartTipoVacina = null, chartComparencia = null, chartTendencia = null;
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -255,17 +256,45 @@ async function mostrarResumoDia(dia) {
     const resumoCard = document.getElementById("dia-selecionado-resumo");
     const titulo = document.getElementById("dia-resumo-titulo");
     const vagasEl = document.getElementById("dia-resumo-vagas");
+    const listaEl = document.getElementById("dia-resumo-agendamentos");
     resumoCard.style.display = "block";
     titulo.textContent = `Dia ${formatarData(dia)}`;
 
     const vagas = await Horarios.obterVagasDia(dia.toISOString());
-    if (vagas.bloqueado) { vagasEl.innerHTML = `<div class="alert alert-danger">Este dia está fechado para agendamentos.</div>`; return; }
+    if (vagas.bloqueado) {
+        vagasEl.innerHTML = `<div class="alert alert-danger">Este dia está fechado para agendamentos.</div>`;
+        if (listaEl) listaEl.innerHTML = "";
+        return;
+    }
 
     vagasEl.innerHTML = VACINAS.filter(v => v.ativo).map(v => `
         <span class="vac-badge" style="background:${v.cor}22; color:${v.cor}; margin-right:0.5rem; padding:0.3rem 0.75rem; font-size:0.85rem;">
             ${v.nome}: ${vagas[v.id] ?? 0} vagas
         </span>
     `).join("");
+
+    if (!listaEl) return;
+
+    const y = dia.getFullYear();
+    const m = String(dia.getMonth() + 1).padStart(2, "0");
+    const d = String(dia.getDate()).padStart(2, "0");
+    const dataISO = `${y}-${m}-${d}`;
+
+    const agendamentosDoDia = await Agendamento.buscarAgendamentos({ dataInicio: dataISO, dataFim: dataISO });
+
+    if (agendamentosDoDia.length === 0) {
+        listaEl.innerHTML = `<div class="empty-state"><p>Sem agendamentos neste dia.</p></div>`;
+    } else {
+        listaEl.innerHTML = agendamentosDoDia.map(a => `
+            <div class="queue-item">
+                <div style="flex:1;">
+                    <strong>${a.nome}</strong><br>
+                    <span style="font-size:0.75rem; color:var(--cor-texto-muted);">${a.nif} — ${(a.vacinasAgendadas || []).map(v => v.tipoVacina).join(", ")}</span>
+                </div>
+                ${badgeEstado(a.estado)}
+            </div>
+        `).join("");
+    }
 }
 
 /* ===================== VALIDAÇÃO / ATENDIMENTO ===================== */
@@ -274,6 +303,10 @@ function configurarEventosValidacao() {
     document.getElementById("busca-validacao").addEventListener("input", debounce(renderizarValidacao, 400));
     document.getElementById("filtro-estado-validacao").addEventListener("change", renderizarValidacao);
     document.getElementById("toggle-historico").addEventListener("change", renderizarValidacao);
+
+    const filtroData = document.getElementById("filtro-data-validacao");
+    if (filtroData) filtroData.addEventListener("change", renderizarValidacao);
+
     document.getElementById("btn-exportar-validacao").addEventListener("click", async () => {
         const dados = await obterAgendamentosFiltrados();
         Exportacao.exportarAgendamentosCSV(dados);
@@ -284,13 +317,25 @@ async function obterAgendamentosFiltrados() {
     const termo = document.getElementById("busca-validacao").value.trim();
     const estado = document.getElementById("filtro-estado-validacao").value;
     const incluirHistorico = document.getElementById("toggle-historico").checked;
+    const filtroDataEl = document.getElementById("filtro-data-validacao");
+    const dataSelecionada = filtroDataEl ? filtroDataEl.value : "";
 
     const filtros = {};
     if (estado) filtros.estado = estado;
-    if (termo) {
-        if (/^\d{9}$/.test(termo)) filtros.nif = termo;
-        else if (/^\d{4}-\d{2}-\d{2}/.test(termo)) { filtros.dataInicio = termo; filtros.dataFim = termo; }
-        else filtros.nome = termo;
+
+    const isNif = /^\d{9}$/.test(termo);
+
+    if (isNif) {
+        filtros.nif = termo;
+    } else {
+        if (dataSelecionada) {
+            filtros.dataInicio = dataSelecionada;
+            filtros.dataFim = dataSelecionada;
+        } else if (termo && /^\d{4}-\d{2}-\d{2}/.test(termo)) {
+            filtros.dataInicio = termo;
+            filtros.dataFim = termo;
+        }
+        if (termo && !isNif && !/^\d{4}-\d{2}-\d{2}/.test(termo)) filtros.nome = termo;
     }
 
     return incluirHistorico ? await Agendamento.buscarHistoricoCompleto({ ...filtros, incluirArquivo: true }) : await Agendamento.buscarAgendamentos(filtros);
@@ -370,8 +415,39 @@ function mostrarDetalheUtente(agendamento) {
     container.innerHTML = `
         <p><strong>${agendamento.nome}</strong> — NIF: ${agendamento.nif}</p>
         <p style="color:var(--cor-texto-muted); font-size:0.85rem; margin-bottom:1rem;">Estado geral: ${badgeEstado(agendamento.estado)}</p>
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
+            <button class="btn btn-secondary" id="btn-confirmar-presenca">Confirmar presença</button>
+            <button class="btn btn-danger" id="btn-anular-registo">Anular registo</button>
+        </div>
         ${vacinasHtml}
     `;
+
+    const btnPresenca = document.getElementById("btn-confirmar-presenca");
+    if (btnPresenca) {
+        btnPresenca.addEventListener("click", async () => {
+            const user = getUtilizadorAtual();
+            try {
+                await Agendamento.confirmarPresenca(agendamento.id, user.uid);
+                mostrarToast("Presença confirmada.", "success");
+                fecharModal("modal-detalhe");
+                renderizarValidacao();
+            } catch (err) { mostrarToast(err.message, "error"); }
+        });
+    }
+
+    const btnAnular = document.getElementById("btn-anular-registo");
+    if (btnAnular) {
+        btnAnular.addEventListener("click", async () => {
+            if (!confirm("Tem certeza que deseja anular este registo?")) return;
+            const user = getUtilizadorAtual();
+            try {
+                await Agendamento.anularAgendamento(agendamento.id, user.uid);
+                mostrarToast("Registo anulado.", "success");
+                fecharModal("modal-detalhe");
+                renderizarValidacao();
+            } catch (err) { mostrarToast(err.message, "error"); }
+        });
+    }
 
     container.querySelectorAll("[data-adm]").forEach(btn => btn.addEventListener("click", async () => {
         const loteId = prompt("ID do lote utilizado:");
@@ -676,11 +752,35 @@ function configurarEventosDashboard() {
         const dados = await Agendamento.buscarAgendamentos({ dataInicio: inicio.toISOString(), dataFim: fim.toISOString() });
         Exportacao.exportarAgendamentosCSV(dados);
     });
+
+    const btnSemanaAnterior = document.getElementById("dashboard-semana-anterior");
+    const btnSemanaSeguinte = document.getElementById("dashboard-semana-seguinte");
+    const inputDataRef = document.getElementById("dashboard-data-referencia");
+
+    if (btnSemanaAnterior) {
+        btnSemanaAnterior.addEventListener("click", () => {
+            semanaReferenciaDashboard.setDate(semanaReferenciaDashboard.getDate() - 7);
+            renderizarDashboard();
+        });
+    }
+    if (btnSemanaSeguinte) {
+        btnSemanaSeguinte.addEventListener("click", () => {
+            semanaReferenciaDashboard.setDate(semanaReferenciaDashboard.getDate() + 7);
+            renderizarDashboard();
+        });
+    }
+    if (inputDataRef) {
+        inputDataRef.addEventListener("change", (e) => {
+            if (!e.target.value) return;
+            semanaReferenciaDashboard = new Date(e.target.value + "T12:00:00");
+            renderizarDashboard();
+        });
+    }
 }
 
 function obterSemanaAtual() {
-    const hoje = new Date();
-    const diaSemana = (hoje.getDay() + 6) % 7;
+    const hoje = new Date(semanaReferenciaDashboard);
+    const diaSemana = hoje.getDay(); // 0 = domingo ... 6 = sábado
     const inicio = new Date(hoje); inicio.setDate(hoje.getDate() - diaSemana); inicio.setHours(0, 0, 0, 0);
     const fim = new Date(inicio); fim.setDate(inicio.getDate() + 6); fim.setHours(23, 59, 59, 999);
     return { inicio, fim };
@@ -745,5 +845,3 @@ async function renderizarDashboard() {
         options: { responsive: true, plugins: { legend: { position: "bottom" } } },
     });
 }
-
-
