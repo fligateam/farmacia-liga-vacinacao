@@ -3,7 +3,7 @@
  * Orquestrador principal — liga a interface (index.html) aos módulos.
  */
 import { COLS, listarColecao } from "./modules/db.js";
-import { initAuth, login, logout, getUtilizadorAtual, criarUtilizadorAdmin, PAPEIS } from "./modules/auth.js";
+import { initAuth, login, logout, getUtilizadorAtual, criarUtilizadorAdmin, criarColaborador, PAPEIS } from "./modules/auth.js";
 import * as Agendamento from "./modules/agendamento.js";
 import * as Stock from "./modules/stock.js";
 import * as Horarios from "./modules/horarios.js";
@@ -14,6 +14,7 @@ import { VACINAS } from "../config/vacinas.js";
 import { APP_CONFIG } from "../config/app.js";
 import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { auth } from "./modules/db.js";
+import { criarColaborador } from "./modules/auth.js";
 
 let mesAtual = new Date();
 let filtroVacinaAtiva = "todos";
@@ -97,6 +98,29 @@ function configurarEventos() {
         } catch (err) { mostrarToast("Erro ao criar administrador: " + err.message, "error"); }
     });
 
+    const formCriarColaborador = document.getElementById("form-criar-colaborador");
+    const ccFeedback = document.getElementById("cc-feedback");
+
+    if (formCriarColaborador) {
+        formCriarColaborador.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            ccFeedback.textContent = "A criar colaborador...";
+            try {
+                const nome = document.getElementById("cc-nome").value.trim();
+                const email = document.getElementById("cc-email").value.trim();
+                const password = document.getElementById("cc-password").value;
+                const papel = document.getElementById("cc-papel").value;
+
+                await criarColaborador({ nome, email, password, papel });
+
+                formCriarColaborador.reset();
+                ccFeedback.textContent = "Colaborador criado com sucesso.";
+            } catch (err) {
+                ccFeedback.textContent = err.message || "Erro ao criar colaborador.";
+            }
+        });
+    }
+
     configurarEventosAgendamento();
     configurarEventosValidacao();
     configurarEventosStock();
@@ -155,7 +179,7 @@ async function renderizarCalendarioAgendamento() {
     const mes = mesAtual.getMonth();
     titulo.textContent = mesAtual.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
 
-    const weekdays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+    const weekdays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", ""];
     let html = weekdays.map(d => `<div class="calendar-header">${d}</div>`).join("");
 
     const primeiroDia = new Date(ano, mes, 1);
@@ -510,7 +534,7 @@ async function renderizarCalendarioHorarios() {
     const mes = mesHorarios.getMonth();
     titulo.textContent = mesHorarios.toLocaleDateString("pt-PT", { month: "long", year: "numeric" });
 
-    const weekdays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+    const weekdays = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", ""];
     let html = weekdays.map(d => `<div class="calendar-header">${d}</div>`).join("");
 
     const primeiroDia = new Date(ano, mes, 1);
